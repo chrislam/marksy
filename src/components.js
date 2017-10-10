@@ -1,6 +1,5 @@
 import createRenderer from './createRenderer';
 import marked from 'marked';
-import {transform} from 'babel-standalone';
 
 export function marksy (options = {}) {
   options.components = options.components || {};
@@ -22,7 +21,7 @@ export function marksy (options = {}) {
   const renderer = createRenderer(tracker, options, {
     html (html) {
       try {
-        const code = transform(html, {
+        const code = options.transform(html, {
           presets: ['react']
         }).code;
         const components = Object.keys(options.components).map(function (key) {

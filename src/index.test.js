@@ -4,6 +4,8 @@ import preactRenderToString from 'preact-render-to-string';
 import {renderToString as infernoRenderToString} from 'inferno-server';
 import infernoCreateElement from 'inferno-create-element';
 import renderer from 'react-test-renderer';
+import { transform as babelStandaloneTransform } from 'babel-standalone';
+import { transform as babelCoreTransform } from 'babel-core';
 import marksy from './'
 import marksyComponents from './components'
 import Prism from 'prismjs'
@@ -176,8 +178,8 @@ it('should be able to compile html', () => {
   expect(tree).toMatchSnapshot();
 });
 
-it('should be able to compile html as components', () => {
-  const compile = marksyComponents({createElement});
+it('should be able to compile html as components using babel-core', () => {
+  const compile = marksyComponents({createElement, transform: babelCoreTransform});
   const compiled = compile(`<div>hello</div>`)
   const tree = renderer.create(
     <TestComponent>{compiled.tree}</TestComponent>
@@ -186,9 +188,20 @@ it('should be able to compile html as components', () => {
   expect(tree).toMatchSnapshot();
 });
 
-it('should be able to compile components', () => {
+it('should be able to compile html as components using babel-standalone', () => {
+  const compile = marksyComponents({createElement, transform: babelStandaloneTransform});
+  const compiled = compile(`<div>hello</div>`)
+  const tree = renderer.create(
+    <TestComponent>{compiled.tree}</TestComponent>
+  ).toJSON();
+
+  expect(tree).toMatchSnapshot();
+});
+
+it('should be able to compile components using babel-core', () => {
   const compile = marksyComponents({
     createElement,
+    transform: babelStandaloneTransform,
     components: {
       Test() {
         return <div>mip</div>
@@ -203,9 +216,46 @@ it('should be able to compile components', () => {
   expect(tree).toMatchSnapshot();
 });
 
-it('should be able to compile components using marksy language', () => {
+it('should be able to compile components using babel-standalone', () => {
   const compile = marksyComponents({
     createElement,
+    transform: babelCoreTransform,
+    components: {
+      Test() {
+        return <div>mip</div>
+      }
+    }
+  });
+  const compiled = compile(`<Test />`)
+  const tree = renderer.create(
+    <TestComponent>{compiled.tree}</TestComponent>
+  ).toJSON();
+
+  expect(tree).toMatchSnapshot();
+});
+
+it('should be able to compile components using marksy language using babel-core', () => {
+  const compile = marksyComponents({
+    createElement,
+    transform: babelCoreTransform,
+    components: {
+      Test() {
+        return <div>mip</div>
+      }
+    }
+  });
+  const compiled = compile('```marksy\n<Test />\n```')
+  const tree = renderer.create(
+    <TestComponent>{compiled.tree}</TestComponent>
+  ).toJSON();
+
+  expect(tree).toMatchSnapshot();
+});
+
+it('should be able to compile components using marksy language using babel-standalone', () => {
+  const compile = marksyComponents({
+    createElement,
+    transform: babelStandaloneTransform,
     components: {
       Test() {
         return <div>mip</div>
@@ -340,9 +390,10 @@ it('should allow injecting context to elements', () => {
   expect(tree).toMatchSnapshot();
 });
 
-it('should allow injecting context to components', () => {
+it('should allow injecting context to components using babel-core', () => {
   const compile = marksyComponents({
     createElement,
+    transform: babelCoreTransform,
     components: {
       Comp (props) {
         return <div>{props.context.foo}</div>
@@ -362,9 +413,33 @@ it('should allow injecting context to components', () => {
   expect(tree).toMatchSnapshot();
 });
 
-it('should be able to inline components', () => {
+it('should allow injecting context to components using babel-standalone', () => {
   const compile = marksyComponents({
     createElement,
+    transform: babelStandaloneTransform,
+    components: {
+      Comp (props) {
+        return <div>{props.context.foo}</div>
+      }
+    }
+  });
+  const compiled = compile(`
+<Comp/>
+  `, {}, {
+    foo: 'bar'
+  })
+
+  const tree = renderer.create(
+    <TestComponent>{compiled.tree}</TestComponent>
+  ).toJSON();
+
+  expect(tree).toMatchSnapshot();
+});
+
+it('should be able to inline components using babel-core', () => {
+  const compile = marksyComponents({
+    createElement,
+    transform: babelCoreTransform,
     components: {
       Comp (props) {
         return <div>Wuuut</div>
@@ -380,9 +455,48 @@ it('should be able to inline components', () => {
   expect(tree).toMatchSnapshot();
 });
 
-it('should allow overriding code element with components version', () => {
+it('should be able to inline components using babel-standalone', () => {
   const compile = marksyComponents({
     createElement,
+    transform: babelStandaloneTransform,
+    components: {
+      Comp (props) {
+        return <div>Wuuut</div>
+      }
+    }
+  });
+  const compiled = compile(`<p>Hello there <Comp/></p>`)
+
+  const tree = renderer.create(
+    <TestComponent>{compiled.tree}</TestComponent>
+  ).toJSON();
+
+  expect(tree).toMatchSnapshot();
+});
+
+it('should allow overriding code element with components version using babel-core', () => {
+  const compile = marksyComponents({
+    createElement,
+    babelCoreTransform,
+    elements: {
+      code() {
+        return <div>code</div>
+      }
+    }
+  });
+  const compiled = compile('Hello `code`');
+
+  const tree = renderer.create(
+    <TestComponent>{compiled.tree}</TestComponent>
+  ).toJSON();
+
+  expect(tree).toMatchSnapshot();
+});
+
+it('should allow overriding code element with components version using babel-standalone', () => {
+  const compile = marksyComponents({
+    createElement,
+    transform: babelStandaloneTransform,
     elements: {
       code() {
         return <div>code</div>
@@ -415,7 +529,7 @@ it('should highlight code with highlight.js', () => {
 });
 
 it('should highlight code with Prism.js', () => {
-  const compile = marksyComponents({
+  const compile = marksy({
     createElement,
     highlight(language, code) {
       return Prism.highlight(code, Prism.languages[language])
