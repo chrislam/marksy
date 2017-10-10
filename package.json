@@ -1,5 +1,5 @@
 {
-  "name": "marksy",
+  "name": "@chrislam/marksy",
   "version": "5.0.0",
   "description": "Convert markdown into react components",
   "main": "lib/index.js",
